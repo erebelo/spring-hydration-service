@@ -44,7 +44,7 @@
 
 - Open the **Amazon S3** console
 - Create the `spring-hydration-bucket` S3 Bucket
-- Create a folder named `athena-result` inside the Bucket
+- Create a folder named `athena-results` inside the Bucket
 - Create additional folders for each Athena table as needed
 
 ## [Athena] Create Workgroup
