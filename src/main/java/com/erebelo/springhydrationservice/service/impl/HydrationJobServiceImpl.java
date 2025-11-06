@@ -56,7 +56,7 @@ public class HydrationJobServiceImpl implements HydrationJobService {
         HydrationRunDto hydrationRun = fetchHydrationRunFromAthena(nextRunNumber);
 
         if (hydrationRun == null) {
-            throw new IllegalStateException("No hydration run found for runNumber: " + nextRunNumber);
+            throw new IllegalStateException("No hydration run found for runNumber=" + nextRunNumber);
         }
 
         HydrationJob newJob = HydrationJob.builder().runNumber(nextRunNumber).createdAt(hydrationRun.getCreatedAt())

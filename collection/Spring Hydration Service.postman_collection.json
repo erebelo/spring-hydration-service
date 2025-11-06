@@ -1,0 +1,97 @@
+{
+	"info": {
+		"_postman_id": "61b98e87-36f7-4e37-a4b5-f5c51549a50f",
+		"name": "Spring Hydration Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3559566"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "GET Actuator Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/spring-hydration-service/actuator/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"spring-hydration-service",
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Hydration",
+			"item": [
+				{
+					"name": "POST Trigger Hydration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"recordTypes\": [\r\n        \"CONTRACT_ADVISOR\",\r\n        \"CONTRACT_FIRM\"\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/spring-hydration-service/hydration/start",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"spring-hydration-service",
+								"hydration",
+								"start"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": ""
+		}
+	]
+}

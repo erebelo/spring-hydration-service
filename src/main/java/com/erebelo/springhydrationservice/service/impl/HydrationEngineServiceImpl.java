@@ -49,13 +49,13 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
     public HydrationEngineServiceImpl(@Lazy HydrationEngineService selfProxy,
             List<HydrationService<? extends RecordDto>> hydrationPipeline, HydrationJobService hydrationJobService,
             HydrationStepService hydrationStepService,
-            @Qualifier("hydrationAsyncTaskExecutor") Executor hydrationAsyncTaskExecutor,
+            @Qualifier("hydrationAsyncTaskExecutor") Executor asyncTaskExecutor,
             @Value("${hydration.threshold.minutes:10}") long hydrationThresholdMinutes) {
         this.selfProxy = selfProxy;
         this.hydrationPipeline = hydrationPipeline;
         this.hydrationJobService = hydrationJobService;
         this.hydrationStepService = hydrationStepService;
-        this.asyncTaskExecutor = hydrationAsyncTaskExecutor;
+        this.asyncTaskExecutor = asyncTaskExecutor;
         this.hydrationThresholdMinutes = hydrationThresholdMinutes;
     }
 
@@ -64,12 +64,12 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
      */
     @Override
     public String triggerHydration(RecordTypeEnum... recordTypes) {
-        log.info("Hydration triggered");
+        log.info("Starting the hydration process");
 
         if (hydrationJobService.existsInitiatedOrProcessingJob()) {
             String jobId = Optional.ofNullable(hydrationJobService.getCurrentJob()).map(HydrationJob::getId)
                     .orElse("unknown");
-            log.info("There is still an ongoing hydration process with job: {}", jobId);
+            log.info("There is still an ongoing hydration process with job={}", jobId);
             return jobId;
         }
 
@@ -84,11 +84,11 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
             executeJob(job, recordTypes);
         }, asyncTaskExecutor).orTimeout(hydrationThresholdMinutes, TimeUnit.MINUTES).exceptionally(ex -> {
             if (ex instanceof TimeoutException) {
-                log.error("Hydration job {} exceeded {} minutes. Cancelling...", job.getId(),
+                log.error("Hydration job={} exceeded {} minutes. Cancelling...", job.getId(),
                         hydrationThresholdMinutes);
                 hydrationJobService.cancelStuckJobsAndStepsIfAny();
             } else if (ex instanceof InterruptedException) {
-                log.error("Hydration job {} thread was interrupted", job.getId());
+                log.error("Hydration job={} thread was interrupted", job.getId());
                 hydrationJobService.cancelStuckJobsAndStepsIfAny();
             }
 
@@ -103,7 +103,7 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
     }
 
     private void executeJob(HydrationJob job, RecordTypeEnum... recordTypes) {
-        log.info("Starting to execute job: {}", job.getId());
+        log.info("Starting to execute job={} for runNumber={}", job.getId(), job.getRunNumber());
         hydrationJobService.updateJobStatus(job, HydrationStatus.PROCESSING);
 
         List<RecordTypeEnum> filteringTypes = Arrays.asList(recordTypes);
@@ -126,7 +126,7 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
                     return;
                 }
 
-                log.error("Error occurred while processing job: {}", job.getId(), e);
+                log.error("Error occurred while processing job={}", job.getId(), e);
                 hydrationStepService.updateStepStatus(step, HydrationStatus.FAILED);
                 hydrationJobService.updateJobStatus(job, HydrationStatus.FAILED);
                 // Abort processing remaining services in the pipeline due to failure
@@ -159,7 +159,7 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
                 .fetchDataFromAthena(service.getDeltaQuery());
         HydrationContextDto context = HydrationContextDto.builder().headerProcessed(false).athenaColumnOrder(null)
                 .build();
-        log.info("Processing query results to hydrate {} data. Execution ID='{}'", service.getRecordType().getValue(),
+        log.info("Processing query results to hydrate {} data. Execution ID={}", service.getRecordType().getValue(),
                 responsePair.getLeft());
 
         step.setExecutionId(responsePair.getLeft());
@@ -196,7 +196,7 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
             } catch (Exception e) {
                 service.saveHydrationFailedRecord(step, dataRecord.getRecordId(), e.getMessage());
                 throw new IllegalStateException(String.format(
-                        "An error occurred while processing and hydrating %s record. RecordId: %s Error: %s",
+                        "An error occurred while processing and hydrating %s record. RecordId=%s. Error: %s",
                         dataRecord.getClass().getSimpleName(), dataRecord.getRecordId(), e.getMessage()));
             }
         }

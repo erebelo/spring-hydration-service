@@ -39,7 +39,7 @@ public class ContractAdvisorService extends AbstractHydrationService<ContractAdv
 
     @Override
     public ContractAdvisorDto hydrateDomainData(ContractAdvisorDto domainData) {
-        log.info("Hydrating Contract Advisor with recordId: {}", domainData.getRecordId());
+        log.info("Hydrating Contract Advisor with recordId={}", domainData.getRecordId());
         repository.save(mapper.dtoToEntity(domainData));
         return domainData;
     }

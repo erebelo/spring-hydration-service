@@ -35,6 +35,6 @@ public class HydrationController {
 
         RecordTypeEnum[] recordTypeArray = recordTypes.toArray(new RecordTypeEnum[0]);
         return new BaseResponse(HttpStatus.ACCEPTED.value(),
-                "Hydration started with Job Id: '" + service.triggerHydration(recordTypeArray) + "'");
+                "Hydration started with Job Id=" + service.triggerHydration(recordTypeArray));
     }
 }
