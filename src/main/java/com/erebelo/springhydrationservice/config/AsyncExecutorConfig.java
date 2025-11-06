@@ -1,5 +1,8 @@
 package com.erebelo.springhydrationservice.config;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,10 +11,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @Configuration
 public class AsyncExecutorConfig {

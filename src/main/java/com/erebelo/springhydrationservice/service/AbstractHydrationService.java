@@ -5,6 +5,7 @@ import com.erebelo.springhydrationservice.domain.dto.RecordDto;
 import com.erebelo.springhydrationservice.domain.model.HydrationFailedRecord;
 import com.erebelo.springhydrationservice.domain.model.HydrationStep;
 import com.erebelo.springhydrationservice.repository.HydrationFailedRecordRepository;
+import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,8 +13,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.athena.model.Row;
-
-import java.util.List;
 
 public abstract class AbstractHydrationService<T extends RecordDto> implements HydrationService<T> {
 

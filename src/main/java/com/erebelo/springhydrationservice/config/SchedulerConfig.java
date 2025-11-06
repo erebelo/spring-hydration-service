@@ -1,6 +1,9 @@
 package com.erebelo.springhydrationservice.config;
 
 import com.mongodb.client.MongoCollection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.mongo.MongoLockProvider;
@@ -17,10 +20,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.ErrorHandler;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @Configuration
 @EnableScheduling

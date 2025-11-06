@@ -4,10 +4,9 @@ import com.erebelo.springhydrationservice.domain.dto.RecordDto;
 import com.erebelo.springhydrationservice.service.HydrationService;
 import com.erebelo.springhydrationservice.service.contract.ContractAdvisorService;
 import com.erebelo.springhydrationservice.service.contract.ContractFirmService;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 public class HydrationConfig {

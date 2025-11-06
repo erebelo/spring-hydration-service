@@ -1,9 +1,13 @@
 package com.erebelo.springhydrationservice.controller;
 
+import static com.erebelo.springhydrationservice.constant.BusinessConstant.HYDRATION_PATH;
+import static com.erebelo.springhydrationservice.constant.BusinessConstant.START_HYDRATION_PATH;
+
 import com.erebelo.springhydrationservice.domain.enumeration.RecordTypeEnum;
 import com.erebelo.springhydrationservice.domain.request.HydrationRequest;
 import com.erebelo.springhydrationservice.domain.response.BaseResponse;
 import com.erebelo.springhydrationservice.service.HydrationEngineService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,11 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
-import static com.erebelo.springhydrationservice.constant.BusinessConstant.HYDRATION_PATH;
-import static com.erebelo.springhydrationservice.constant.BusinessConstant.START_HYDRATION_PATH;
 
 @Slf4j
 @RestController

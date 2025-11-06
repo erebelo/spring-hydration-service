@@ -1,11 +1,10 @@
 package com.erebelo.springhydrationservice.service;
 
 import com.erebelo.springhydrationservice.domain.dto.AthenaContextDto;
+import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.athena.model.Row;
-
-import java.util.List;
 
 public interface AthenaService {
 

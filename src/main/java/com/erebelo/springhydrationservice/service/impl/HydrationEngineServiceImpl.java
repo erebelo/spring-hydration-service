@@ -10,9 +10,17 @@ import com.erebelo.springhydrationservice.service.HydrationEngineService;
 import com.erebelo.springhydrationservice.service.HydrationJobService;
 import com.erebelo.springhydrationservice.service.HydrationService;
 import com.erebelo.springhydrationservice.service.HydrationStepService;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -21,17 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.athena.model.Row;
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
@@ -81,20 +78,10 @@ public class HydrationEngineServiceImpl implements HydrationEngineService {
 
         HydrationJob job = Optional.ofNullable(hydrationJobService.getCurrentJob())
                 .orElseGet(() -> HydrationJob.builder().id("unknown").build());
-        Map<String, String> loggingContext = MDC.getCopyOfContextMap();
 
         CompletableFuture.runAsync(() -> {
             workerThreadRef.set(Thread.currentThread());
-
-            if (loggingContext != null) {
-                MDC.setContextMap(loggingContext);
-            }
-
-            try {
-                executeJob(job, recordTypes);
-            } finally {
-                MDC.clear();
-            }
+            executeJob(job, recordTypes);
         }, asyncTaskExecutor).orTimeout(hydrationThresholdMinutes, TimeUnit.MINUTES).exceptionally(ex -> {
             if (ex instanceof TimeoutException) {
                 log.error("Hydration job {} exceeded {} minutes. Cancelling...", job.getId(),

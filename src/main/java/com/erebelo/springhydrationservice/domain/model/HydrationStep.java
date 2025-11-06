@@ -2,14 +2,13 @@ package com.erebelo.springhydrationservice.domain.model;
 
 import com.erebelo.springhydrationservice.domain.enumeration.HydrationStatus;
 import com.erebelo.springhydrationservice.domain.enumeration.RecordTypeEnum;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.Instant;
 
 @Data
 @Builder

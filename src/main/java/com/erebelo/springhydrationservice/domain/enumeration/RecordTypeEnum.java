@@ -3,14 +3,13 @@ package com.erebelo.springhydrationservice.domain.enumeration;
 import com.erebelo.springhydrationservice.domain.dto.RecordDto;
 import com.erebelo.springhydrationservice.domain.dto.contract.ContractAdvisorDto;
 import com.erebelo.springhydrationservice.domain.dto.contract.ContractFirmDto;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 @Getter
 @ToString

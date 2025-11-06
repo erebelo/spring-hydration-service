@@ -2,12 +2,11 @@ package com.erebelo.springhydrationservice.domain.dto.contract;
 
 import com.erebelo.springhydrationservice.domain.dto.RecordDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.LocalDate;
 
 @Data
 @SuperBuilder

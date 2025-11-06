@@ -5,11 +5,10 @@ import com.erebelo.springhydrationservice.domain.enumeration.RecordTypeEnum;
 import com.erebelo.springhydrationservice.domain.model.HydrationStep;
 import com.erebelo.springhydrationservice.repository.HydrationStepRepository;
 import com.erebelo.springhydrationservice.service.HydrationStepService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

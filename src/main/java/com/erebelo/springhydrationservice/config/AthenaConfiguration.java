@@ -1,6 +1,7 @@
 package com.erebelo.springhydrationservice.config;
 
 import com.erebelo.springhydrationservice.service.impl.AthenaServiceImpl;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,8 +9,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.athena.AthenaClient;
-
-import java.time.Duration;
 
 @Configuration
 public class AthenaConfiguration {

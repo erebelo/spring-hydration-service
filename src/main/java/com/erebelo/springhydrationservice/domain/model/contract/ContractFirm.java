@@ -1,14 +1,13 @@
 package com.erebelo.springhydrationservice.domain.model.contract;
 
 import com.erebelo.springhydrationservice.domain.dto.RecordDto;
+import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.LocalDate;
 
 @Data
 @SuperBuilder

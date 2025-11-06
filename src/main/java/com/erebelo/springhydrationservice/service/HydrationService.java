@@ -4,11 +4,10 @@ import com.erebelo.springhydrationservice.domain.dto.AthenaContextDto;
 import com.erebelo.springhydrationservice.domain.dto.RecordDto;
 import com.erebelo.springhydrationservice.domain.enumeration.RecordTypeEnum;
 import com.erebelo.springhydrationservice.domain.model.HydrationStep;
+import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.athena.model.Row;
-
-import java.util.List;
 
 public interface HydrationService<T extends RecordDto> {
 

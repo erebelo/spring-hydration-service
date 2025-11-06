@@ -8,6 +8,10 @@ import com.erebelo.springhydrationservice.repository.HydrationJobRepository;
 import com.erebelo.springhydrationservice.service.AthenaService;
 import com.erebelo.springhydrationservice.service.HydrationJobService;
 import com.erebelo.springhydrationservice.service.HydrationStepService;
+import java.time.Instant;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,11 +19,6 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.athena.model.Datum;
 import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.athena.model.Row;
-
-import java.time.Instant;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class HydrationJobServiceImpl implements HydrationJobService {
