@@ -13,6 +13,7 @@
   - `AmazonAthenaFullAccess`  
     _(Skip extra policies to avoid unnecessary permissions; you can add them later if needed.)_
 
+- Select the created group
 - Finish by clicking **Create user**
 
 ---
