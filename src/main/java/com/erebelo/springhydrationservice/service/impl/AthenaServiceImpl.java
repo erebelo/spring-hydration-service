@@ -1,0 +1,199 @@
+package com.erebelo.springhydrationservice.service.impl;
+
+import com.erebelo.springhydrationservice.domain.dto.AthenaContextDto;
+import com.erebelo.springhydrationservice.domain.dto.AthenaQueryDto;
+import com.erebelo.springhydrationservice.exception.model.AthenaQueryException;
+import com.erebelo.springhydrationservice.service.AthenaService;
+import com.erebelo.springhydrationservice.util.ObjectMapperUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JavaType;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.athena.model.AthenaException;
+import software.amazon.awssdk.services.athena.model.Datum;
+import software.amazon.awssdk.services.athena.model.GetQueryExecutionRequest;
+import software.amazon.awssdk.services.athena.model.GetQueryExecutionResponse;
+import software.amazon.awssdk.services.athena.model.GetQueryResultsRequest;
+import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
+import software.amazon.awssdk.services.athena.model.QueryExecutionState;
+import software.amazon.awssdk.services.athena.model.Row;
+import software.amazon.awssdk.services.athena.model.StartQueryExecutionRequest;
+import software.amazon.awssdk.services.athena.model.StartQueryExecutionResponse;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@RequiredArgsConstructor
+public class AthenaServiceImpl implements AthenaService {
+
+    private final AthenaClient athenaClient;
+    private final String athenaDatabase;
+    private final String outputBucketUrl;
+    private final String workgroup;
+
+    @Override
+    public Pair<String, Iterable<GetQueryResultsResponse>> fetchDataFromAthena(String query) {
+        AthenaQueryDto athenaQuery = submitAthenaQuery(query);
+        String executionId = athenaQuery.getExecutionId();
+
+        try {
+            waitForQueryToComplete(executionId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Thread interrupted while waiting for Athena query to complete", e);
+        }
+
+        return Pair.of(executionId, getQueryResults(executionId));
+    }
+
+    @Override
+    public <T extends AthenaContextDto> List<Row> processAndSkipHeaderOnce(List<Row> rows, T context) {
+        if (!context.isHeaderProcessed()) {
+            Row headerRow = rows.getFirst();
+            context.setAthenaColumnOrder(headerRow.data().stream().map(Datum::varCharValue).toArray(String[]::new));
+            context.setHeaderProcessed(true);
+
+            return !rows.isEmpty() ? rows.subList(1, rows.size()) : Collections.emptyList();
+        }
+
+        return rows;
+    }
+
+    /*
+     * Maps Athena Row objects to a list of instances of the given class, based on
+     * the provided order of column names returned by Athena.
+     */
+    @Override
+    public <T> List<T> mapRowsToClass(String[] athenaColumnOrder, List<Row> rows, Class<T> clazz) {
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> normalizedColumns = Arrays.stream(athenaColumnOrder).toList();
+        Map<String, Field> fieldTypes = getAllFieldTypes(clazz);
+        List<T> result = new ArrayList<>(rows.size());
+
+        for (Row row : rows) {
+            List<Datum> allData = row.data();
+            Map<String, Object> fieldMap = new LinkedHashMap<>();
+
+            if (allData.size() != normalizedColumns.size()) {
+                throw new IllegalArgumentException(String.format("Row has %d values but expected %d columns: %s",
+                        allData.size(), normalizedColumns.size(), normalizedColumns));
+            }
+
+            for (int i = 0; i < normalizedColumns.size(); i++) {
+                String key = normalizedColumns.get(i);
+                String rawValue = (i < allData.size() && allData.get(i) != null) ? allData.get(i).varCharValue() : null;
+
+                Field field = fieldTypes.get(key);
+                if (field != null && rawValue != null) {
+                    JavaType javaType = ObjectMapperUtil.objectMapper.getTypeFactory()
+                            .constructType(field.getGenericType());
+
+                    Object converted = ObjectMapperUtil.objectMapper.convertValue(rawValue, javaType);
+                    fieldMap.put(key, converted);
+                }
+            }
+
+            T instance = ObjectMapperUtil.objectMapper.convertValue(fieldMap, clazz);
+            result.add(instance);
+        }
+
+        return result;
+    }
+
+    private AthenaQueryDto submitAthenaQuery(String queryString) {
+        try {
+            StartQueryExecutionRequest startQueryExecutionRequest = StartQueryExecutionRequest.builder()
+                    .queryString(queryString).queryExecutionContext(ctx -> ctx.database(athenaDatabase))
+                    .resultConfiguration(cfg -> cfg.outputLocation(outputBucketUrl)).workGroup(workgroup).build();
+
+            StartQueryExecutionResponse startQueryExecutionResponse = athenaClient
+                    .startQueryExecution(startQueryExecutionRequest);
+
+            if (startQueryExecutionResponse == null || startQueryExecutionResponse.queryExecutionId() == null
+                    || startQueryExecutionResponse.queryExecutionId().isEmpty()) {
+                throw new AthenaQueryException("Failed to execute Athena query: No execution Id returned");
+            }
+
+            return AthenaQueryDto.builder().executionId(startQueryExecutionResponse.queryExecutionId()).build();
+        } catch (AthenaException e) {
+            log.info("Failed to execute Athena query: {}", e.getMessage());
+            throw new AthenaQueryException("Failed to execute Athena query", e);
+        }
+    }
+
+    private void waitForQueryToComplete(String queryExecutionId) throws InterruptedException {
+        GetQueryExecutionRequest getQueryExecutionRequest = GetQueryExecutionRequest.builder()
+                .queryExecutionId(queryExecutionId).build();
+
+        GetQueryExecutionResponse getQueryExecutionResponse;
+        boolean isQueryStillRunning = true;
+
+        while (isQueryStillRunning) {
+            getQueryExecutionResponse = athenaClient.getQueryExecution(getQueryExecutionRequest);
+            String queryState = getQueryExecutionResponse.queryExecution().status().state().toString();
+
+            if (queryState.equals(QueryExecutionState.FAILED.toString())) {
+                String errorCause = getQueryExecutionResponse.queryExecution().status().stateChangeReason();
+                log.error("The Athena query failed to run: {}", errorCause);
+                throw new AthenaQueryException("The Athena query failed to run: " + errorCause);
+            } else if (queryState.equals(QueryExecutionState.CANCELLED.toString())) {
+                log.error("The Athena query was cancelled");
+                throw new AthenaQueryException("The Athena query was cancelled");
+            } else if (queryState.equals(QueryExecutionState.SUCCEEDED.toString())) {
+                isQueryStillRunning = false;
+            } else {
+                // Sleep an amount of time before retrying again
+                Thread.sleep(300);
+            }
+            log.info("The current status of the query is: {}", queryState);
+        }
+    }
+
+    private Iterable<GetQueryResultsResponse> getQueryResults(String queryExecutionId) {
+        try {
+            GetQueryResultsRequest getQueryResultsRequest = GetQueryResultsRequest.builder()
+                    .queryExecutionId(queryExecutionId).build();
+
+            return athenaClient.getQueryResultsPaginator(getQueryResultsRequest);
+        } catch (AthenaException e) {
+            log.info("Failed to get query results: {}", e.getMessage());
+            throw new AthenaQueryException("Failed to get query results", e);
+        }
+    }
+
+    /*
+     * Retrieves all declared fields types from the class and superclasses,
+     * excluding Object.class, and maps them by column name. Considers @JsonProperty
+     * and ignores duplicates (keeps the first occurrence).
+     */
+    private static Map<String, Field> getAllFieldTypes(Class<?> clazz) {
+        Map<String, Field> fieldMap = new LinkedHashMap<>();
+        Class<?> current = clazz;
+
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                String name = field.getName();
+                JsonProperty prop = field.getAnnotation(JsonProperty.class);
+                if (prop != null && !prop.value().isEmpty()) {
+                    name = prop.value();
+                }
+                // putIfAbsent ensures we keep the first occurrence and ignore duplicates
+                fieldMap.putIfAbsent(name, field);
+            }
+            current = current.getSuperclass();
+        }
+
+        return fieldMap;
+    }
+}

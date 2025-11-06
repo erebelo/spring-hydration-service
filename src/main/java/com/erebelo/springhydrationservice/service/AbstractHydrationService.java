@@ -1,0 +1,72 @@
+package com.erebelo.springhydrationservice.service;
+
+import com.erebelo.springhydrationservice.domain.dto.AthenaContextDto;
+import com.erebelo.springhydrationservice.domain.dto.RecordDto;
+import com.erebelo.springhydrationservice.domain.model.HydrationFailedRecord;
+import com.erebelo.springhydrationservice.domain.model.HydrationStep;
+import com.erebelo.springhydrationservice.repository.HydrationFailedRecordRepository;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
+import software.amazon.awssdk.services.athena.model.Row;
+
+import java.util.List;
+
+public abstract class AbstractHydrationService<T extends RecordDto> implements HydrationService<T> {
+
+    protected HydrationJobService hydrationJobService;
+    private AthenaService athenaService;
+    private HydrationFailedRecordRepository hydrationFailedRecordRepository;
+    private final Class<T> clazz;
+
+    protected AbstractHydrationService(Class<T> clazz) {
+        this.clazz = clazz;
+    }
+
+    @Autowired
+    public final void setHydrationJobService(HydrationJobService hydrationJobService) {
+        this.hydrationJobService = hydrationJobService;
+    }
+
+    @Autowired
+    @Qualifier("hydrationAthenaService")
+    public final void setAthenaService(AthenaService athenaService) {
+        this.athenaService = athenaService;
+    }
+
+    @Autowired
+    public final void setHydrationFailedRecordRepository(
+            HydrationFailedRecordRepository hydrationFailedRecordRepository) {
+        this.hydrationFailedRecordRepository = hydrationFailedRecordRepository;
+    }
+
+    @Override
+    public Pair<String, Iterable<GetQueryResultsResponse>> fetchDataFromAthena(String query) {
+        return athenaService.fetchDataFromAthena(query);
+    }
+
+    @Override
+    public <U extends AthenaContextDto> List<Row> processAndSkipHeaderOnce(List<Row> rows, U context) {
+        return athenaService.processAndSkipHeaderOnce(rows, context);
+    }
+
+    @Override
+    public List<T> mapRowsToDomainData(String[] athenaColumnOrder, List<Row> rows) {
+        return athenaService.mapRowsToClass(athenaColumnOrder, rows, this.clazz);
+    }
+
+    /*
+     * Executes in a separate transaction to ensure failure logs are persisted even
+     * if the main transaction rolls back.
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveHydrationFailedRecord(HydrationStep step, String recordId, String errorMessage) {
+        HydrationFailedRecord failedRecord = HydrationFailedRecord.builder().recordId(recordId).stepId(step.getId())
+                .executionId(step.getExecutionId()).domainType(this.getRecordType()).errorMessage(errorMessage).build();
+        hydrationFailedRecordRepository.save(failedRecord);
+    }
+}

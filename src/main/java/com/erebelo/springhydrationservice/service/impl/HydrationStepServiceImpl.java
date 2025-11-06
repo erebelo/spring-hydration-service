@@ -1,0 +1,57 @@
+package com.erebelo.springhydrationservice.service.impl;
+
+import com.erebelo.springhydrationservice.domain.enumeration.HydrationStatus;
+import com.erebelo.springhydrationservice.domain.enumeration.RecordTypeEnum;
+import com.erebelo.springhydrationservice.domain.model.HydrationStep;
+import com.erebelo.springhydrationservice.repository.HydrationStepRepository;
+import com.erebelo.springhydrationservice.service.HydrationStepService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class HydrationStepServiceImpl implements HydrationStepService {
+
+    private final HydrationStepRepository repository;
+
+    @Override
+    public HydrationStep initNewStep(RecordTypeEnum recordType, String jobId) {
+        HydrationStep newStep = HydrationStep.builder().jobId(jobId).startTime(Instant.now()).domainType(recordType)
+                .status(HydrationStatus.INITIATED).build();
+
+        repository.save(newStep);
+
+        return newStep;
+    }
+
+    @Override
+    public void updateStepStatus(HydrationStep step, HydrationStatus status) {
+        step.setStatus(status);
+
+        if (HydrationStatus.FAILED == status || HydrationStatus.COMPLETED == status) {
+            step.setEndTime(Instant.now());
+        }
+
+        repository.save(step);
+    }
+
+    @Override
+    public void cancelActiveStepsByJobId(String jobId, Instant now) {
+        List<HydrationStep> activeSteps = repository.findAllByJobIdAndStatusIn(jobId,
+                List.of(HydrationStatus.INITIATED, HydrationStatus.PROCESSING));
+
+        if (activeSteps.isEmpty()) {
+            return;
+        }
+
+        activeSteps.forEach(step -> {
+            step.setStatus(HydrationStatus.CANCELED);
+            step.setEndTime(now);
+        });
+
+        repository.saveAll(activeSteps);
+    }
+}

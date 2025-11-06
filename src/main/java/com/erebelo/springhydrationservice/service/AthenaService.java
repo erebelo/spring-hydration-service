@@ -1,0 +1,18 @@
+package com.erebelo.springhydrationservice.service;
+
+import com.erebelo.springhydrationservice.domain.dto.AthenaContextDto;
+import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.athena.model.GetQueryResultsResponse;
+import software.amazon.awssdk.services.athena.model.Row;
+
+import java.util.List;
+
+public interface AthenaService {
+
+    Pair<String, Iterable<GetQueryResultsResponse>> fetchDataFromAthena(String query);
+
+    <T extends AthenaContextDto> List<Row> processAndSkipHeaderOnce(List<Row> rows, T context);
+
+    <T> List<T> mapRowsToClass(String[] athenaColumnOrder, List<Row> rows, Class<T> clazz);
+
+}
