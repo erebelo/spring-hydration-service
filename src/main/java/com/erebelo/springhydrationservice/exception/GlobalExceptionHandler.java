@@ -1,6 +1,7 @@
 package com.erebelo.springhydrationservice.exception;
 
 import com.erebelo.springhydrationservice.exception.model.AthenaQueryException;
+import com.erebelo.springhydrationservice.exception.model.ExceptionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.ObjectUtils;
